@@ -4,6 +4,7 @@ import com.urbanfleet.tracker.model.Unit
 import com.urbanfleet.tracker.model.UnitStatus
 import com.urbanfleet.tracker.model.UnitType
 import com.urbanfleet.tracker.repository.UnitRepository
+import com.urbanfleet.tracker.service.PatrolSimulationService
 import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -14,7 +15,7 @@ class DataInitializer {
     
     @Bean
     @Profile("!test")
-    fun initDatabase(repository: UnitRepository) = CommandLineRunner {
+    fun initDatabase(repository: UnitRepository, patrolService: PatrolSimulationService) = CommandLineRunner {
         if (repository.count() == 0L) {
             val units = listOf(
                 Unit("VTR-01", UnitType.PATROL, UnitStatus.ACTIVE, "Centro Cívico", -25.4190, -49.2680),
@@ -35,6 +36,10 @@ class DataInitializer {
             )
             repository.saveAll(units)
             println("✅ Loaded ${units.size} mock units into database")
+            
+            // Trigger simulation update
+            patrolService.refreshUnits()
+            println("✅ Initialized patrol simulation")
         }
     }
 }

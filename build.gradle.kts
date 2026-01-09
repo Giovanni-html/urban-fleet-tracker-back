@@ -34,6 +34,8 @@ dependencies {
     // Database
     runtimeOnly("org.postgresql:postgresql")
     runtimeOnly("com.h2database:h2") // For development/testing
+    runtimeOnly("org.xerial:sqlite-jdbc:3.45.1.0") // SQLite for local persistence
+    implementation("org.hibernate.orm:hibernate-community-dialects:6.5.3.Final") // SQLite dialect
     
     // Development
     developmentOnly("org.springframework.boot:spring-boot-devtools")

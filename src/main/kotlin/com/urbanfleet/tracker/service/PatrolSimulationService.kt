@@ -48,16 +48,25 @@ class PatrolSimulationService(
         
         units.forEach { unit ->
             // DYNAMIC ROUTE GENERATION
-            // Generate 3 random checkpoints around the unit's base (~500m-800m radius)
-            // to create a realistic patrol loop for THIS neighborhood.
+            // Generate 4 checkpoints in roughly cardinal directions around the unit's base
+            // to create a realistic patrol loop that covers more ground
             val center = Point(unit.lat, unit.lng)
             val checkpoints = mutableListOf<Point>()
             checkpoints.add(center) // Start
             
-            for (i in 1..3) {
-                // Random offset: roughly 0.005 degrees is ~500m
-                val latOffset = (Math.random() - 0.5) * 0.010 
-                val lngOffset = (Math.random() - 0.5) * 0.010
+            // Create checkpoints in roughly N, E, S, W directions with some randomness
+            // This ensures routes cover a larger area and don't cluster
+            val baseRadius = 0.012 // ~1.3km spread
+            val directions = listOf(
+                Pair(1.0, 0.3),   // NE-ish
+                Pair(0.3, 1.0),   // E-ish  
+                Pair(-1.0, 0.3),  // SW-ish
+                Pair(-0.3, -1.0)  // W-ish
+            )
+            
+            for ((latDir, lngDir) in directions) {
+                val latOffset = latDir * baseRadius * (0.7 + Math.random() * 0.6)
+                val lngOffset = lngDir * baseRadius * (0.7 + Math.random() * 0.6)
                 checkpoints.add(Point(center.lat + latOffset, center.lng + lngOffset))
             }
             checkpoints.add(center) // Loop back to start

@@ -22,16 +22,22 @@ class MapboxService {
 
         // Format coordinates as "lng,lat;lng,lat"
         val coordinates = points.joinToString(";") { "${it.lng},${it.lat}" }
-        val url = "https://api.mapbox.com/directions/v5/mapbox/driving/$coordinates?geometries=geojson&access_token=$mapboxToken"
+        
+        // Use Optimized Trips API for round-trip patrol routes
+        // This ensures we get a LOOP that follows real streets
+        val url = "https://api.mapbox.com/optimized-trips/v1/mapbox/driving/$coordinates?roundtrip=true&source=first&destination=last&geometries=geojson&overview=full&access_token=$mapboxToken"
 
         try {
-            val response = restTemplate.getForObject(url, MapboxResponse::class.java)
-            if (response != null && response.routes.isNotEmpty()) {
-                val geometry = response.routes[0].geometry
+            val response = restTemplate.getForObject(url, MapboxOptimizedResponse::class.java)
+            if (response != null && response.trips.isNotEmpty()) {
+                val geometry = response.trips[0].geometry
+                logger.info("Mapbox returned ${geometry.coordinates.size} coordinate points for the route")
                 return geometry.coordinates.map { Point(it[1], it[0]) } // Mapbox is [lng, lat], we want Point(lat, lng)
+            } else {
+                logger.warn("Mapbox returned empty trips array")
             }
         } catch (e: Exception) {
-            logger.error("Error fetching route from Mapbox: ${e.message}")
+            logger.error("Error fetching route from Mapbox: ${e.message}", e)
         }
         
         // Fallback: return linear path if API fails
@@ -40,14 +46,15 @@ class MapboxService {
     }
 }
 
-// Data Classes for JSON Parsing
+// Data Classes for JSON Parsing (Optimized Trips API)
 @JsonIgnoreProperties(ignoreUnknown = true)
-data class MapboxResponse(
-    val routes: List<MapboxRoute> = emptyList()
+data class MapboxOptimizedResponse(
+    val trips: List<MapboxTrip> = emptyList(),
+    val code: String = ""
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-data class MapboxRoute(
+data class MapboxTrip(
     val geometry: MapboxGeometry
 )
 
